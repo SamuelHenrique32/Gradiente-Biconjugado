@@ -2,233 +2,235 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define N_COL 5
-#define A(row, col) A[row * N_COL + col]
+#define kN_COLUMNS 5
+#define mat(i_row, i_col) pd_mat_a[i_row * kN_COLUMNS + i_col]
 
-double *aloca_vetor(int n)
-{
-  return calloc(n, sizeof(double));
+// ---------------------------------------------------------------------------------------------------------------------------------------
+
+void init_mat(double *pd_mat_a);
+void init_vector(double *pd_vector, int i_n);
+double *aloc_vector(int i_size);
+void mult_mat_vector(int i_n, double *pd_mat_a, double *pd_vector, double *pd_result);
+void mult_mat_row_vector(int i_n, double *pd_mat_a, double *pd_vector, double *pd_result);
+double mult_vector_row_vector(int i_n, double *pd_vector1, double *pd_vector2);
+void sub_vector_vector(int i_n, double *pd_vector1, double *pd_vector2, double *pd_result);
+void copy_vector(int i_n, double *pd_vector1, double *pd_result);
+void print_vector_aux(int i_n, double *pd_vector);
+void print_vector(int i_n, double *pd_vector);
+int main(int argc, char **argv);
+
+// ---------------------------------------------------------------------------------------------------------------------------------------
+
+void init_mat(double *pd_mat_a) {
+
+  mat(0, 0) = 4;
+  mat(0, 1) = 0;
+  mat(0, 2) = 0;
+  mat(0, 3) = 0;
+  mat(0, 4) = 0;
+
+  mat(1, 0) = 1;
+  mat(1, 1) = 4;
+  mat(1, 2) = 0;
+  mat(1, 3) = 0;
+  mat(1, 4) = 0;
+
+  mat(2, 0) = 0;
+  mat(2, 1) = 1;
+  mat(2, 2) = 4;
+  mat(2, 3) = 0;
+  mat(2, 4) = 0;
+
+  mat(3, 0) = 0;
+  mat(3, 1) = 0;
+  mat(3, 2) = 1;
+  mat(3, 3) = 4;
+  mat(3, 4) = 0;
+
+  mat(4, 0) = 5;
+  mat(4, 1) = 0;
+  mat(4, 2) = 0;
+  mat(4, 3) = 1;
+  mat(4, 4) = 4;
 }
 
-void inicializa_matriz(double *A)
-{
+void init_vector(double *pd_vector, int i_n) {
 
-  A(0, 0) = 4;
-  A(0, 1) = 0;
-  A(0, 2) = 0;
-  A(0, 3) = 0;
-  A(0, 4) = 0;
-
-  A(1, 0) = 1;
-  A(1, 1) = 4;
-  A(1, 2) = 0;
-  A(1, 3) = 0;
-  A(1, 4) = 0;
-
-  A(2, 0) = 0;
-  A(2, 1) = 1;
-  A(2, 2) = 4;
-  A(2, 3) = 0;
-  A(2, 4) = 0;
-
-  A(3, 0) = 0;
-  A(3, 1) = 0;
-  A(3, 2) = 1;
-  A(3, 3) = 4;
-  A(3, 4) = 0;
-
-  A(4, 0) = 5;
-  A(4, 1) = 0;
-  A(4, 2) = 0;
-  A(4, 3) = 1;
-  A(4, 4) = 4;
+    for(int i_index=0; i_index<i_n; i_index++)  {
+        pd_vector[i_index] = 1;
+    }
 }
 
-void inicializa_vetor(double *V, int n)
-{
-  for (int i = 0; i < n; i++)
-  {
-    V[i] = 1;
-  }
+double *aloc_vector(int i_size) {
+  return calloc(i_size, sizeof(double));
 }
 
-void multiplicacao_matriz_vetor(int n, double *A, double *V, double *R)
-{
-  for (int i = 0; i < n; i++)
-  {
-    R[i] = 0;
-    for (int j = 0; j < n; j++)
-    {
-      R[i] += A(i, j) * V[j];
+void mult_mat_vector(int i_n, double *pd_mat_a, double *pd_vector, double *pd_result) {
+
+    for(int i_index=0 ; i_index<i_n ; i_index++) {
+
+        pd_result[i_index] = 0;
+
+        for(int i_index2=0 ; i_index2<i_n ; i_index2++) {
+            pd_result[i_index] += mat(i_index, i_index2) * pd_vector[i_index2];
+        }
+    }
+}
+
+void mult_mat_row_vector(int i_n, double *pd_mat_a, double *pd_vector, double *pd_result) {
+
+  for(int i_index=0 ; i_index<i_n ; i_index++) {
+
+    pd_result[i_index] = 0;
+
+    for(int i_index2=0; i_index2<i_n; i_index2++) {
+      pd_result[i_index] += mat(i_index2, i_index) * pd_vector[i_index2];
     }
   }
 }
 
-void print_vetor(int n, double *V){
-	int i;
-	for (i = 0; i < n; i++){
-		printf("%.4f\n", V[i]);
+double mult_vector_row_vector(int i_n, double *pd_vector1, double *pd_vector2) {
+
+  double d_result = 0;
+  int i_index = 0;
+
+  for(i_index=0 ; i_index<i_n ; i_index++) {
+    d_result += pd_vector1[i_index] * pd_vector2[i_index];
+  }
+
+  return d_result;
+}
+
+void sub_vector_vector(int i_n, double *pd_vector1, double *pd_vector2, double *pd_result) {
+
+  int i_index = 0;
+
+  for(i_index=0 ; i_index<i_n ; i_index++) {
+
+    pd_result[i_index] = pd_vector1[i_index] - pd_vector2[i_index];
+  }
+}
+
+void copy_vector(int i_n, double *pd_vector1, double *pd_result) {
+
+  int i_index = 0;
+
+  for(i_index=0 ; i_index<i_n ; i_index++) {
+    pd_result[i_index] = pd_vector1[i_index];
+  }
+}
+
+void print_vector_aux(int i_n, double *pd_vector) {
+
+    printf("\nVetor\t");
+
+    for(int i_index=0 ; i_index<i_n ; i_index++) {
+        printf("%f\t", pd_vector[i_index]);
+    }
+
+    printf("\n\n");
+}
+
+void print_vector(int i_n, double *pd_vector) {
+
+	for(int i_index=0; i_index<i_n; i_index++) {
+		printf("%.4f\n", pd_vector[i_index]);
 	}
+
 	printf("\n");
 }
 
-void multiplicacao_matriz_linha_vetor(int n, double *A, double *V, double *R)
-{
-  for (int i = 0; i < n; i++)
-  {
-    R[i] = 0;
-    for (int j = 0; j < n; j++)
-    {
-      R[i] += A(j, i) * V[j];
-    }
-  }
-}
+int main(int argc, char **argv) {
 
-void subtracao_vetor_vetor(int n, double *V1, double *V2, double *R)
-{
-  int i = 0;
-  for (i = 0; i < n; i++)
-  {
-    R[i] = V1[i] - V2[i];
-  }
-}
+  int i_imax = 1000000;
+  int i_iteration = 1;
+  int i_n = kN_COLUMNS;
 
-void copia_vetor(int n, double *V, double *R)
-{
-  int i = 0;
-  for (i = 0; i < n; i++)
-  {
-    R[i] = V[i];
-  }
-}
+  double *pd_mat_a = aloc_vector(i_n * i_n); //Vector as a matrix
+  init_mat(pd_mat_a);
 
-double multiplicacao_vetor_linha_vetor(int n, double *Vl, double *V)
-{
-  double f = 0;
-  int i = 0;
-  for (i = 0; i < n; i++)
-  {
-    f += Vl[i] * V[i];
-  }
-  return f;
-}
+  double *pd_vector_b = aloc_vector(i_n);
+  init_vector(pd_vector_b, i_n);
 
-void printV(int n, double * v){
-  printf("\nVetor\t");
-  for(int i=0;i<n;i++){
-    printf("%f\t", v[i]);
-  }
-  printf("\n\n");
-}
+  //x = zeros(n,1);
+  //p = zeros(n,1);
+  //p2 = zeros(n,1)
+  double *pd_vector_x = aloc_vector(i_n);
+  double *pd_vector_p = aloc_vector(i_n);
+  double *pd_vector_p2 = aloc_vector(i_n);
 
-int main()
-{
-  // imax = 1000;
-  // erro = 0.0001;
-  // i = 1;
-  // n = length(A);
-  int imax = 1000000;
-  double erro = 0.00001;
-  int i = 1;
-  int n = N_COL;
+  double *pd_vector_r = aloc_vector(i_n);
+  double *pd_vector_aux = aloc_vector(i_n);
+  double *pd_vector_v = aloc_vector(i_n);
+  double *pd_vector_r2 = aloc_vector(i_n);
+  double d_rho0;
+  double d_beta;
+  double d_alpha;
+  double d_error = 0.00001;
+  double d_calculated_error = 0;
 
-  double *A = aloca_vetor(n * n); // Uso de vetor como matriz, usar v[ linha * N_COL + col ]
-  inicializa_matriz(A);
+  //r = b - A*x;
+  mult_mat_vector(i_n, pd_mat_a, pd_vector_x, pd_vector_aux);
+  sub_vector_vector(i_n, pd_vector_b, pd_vector_aux, pd_vector_r);
 
-  double *b = aloca_vetor(n);
-  inicializa_vetor(b, n);
-
-  // x = zeros(n,1);
-  // p = zeros(n,1);
-  // p2 = zeros(n,1)
-  double *x = aloca_vetor(n);
-  //printV(n, x);
-  double *p = aloca_vetor(n);
-  //printV(n, p);
-  double *p2 = aloca_vetor(n);
-  //printV(n, p2);
-
-  double *r = aloca_vetor(n);
-  double *rAux = aloca_vetor(n);
-  double *vetAux = aloca_vetor(n);
-  double *v = aloca_vetor(n);
-  double *r2 = aloca_vetor(n);
-  double rho0;
-  double beta;
-  double alpha;
-
-  // r = b - A*x;
-  multiplicacao_matriz_vetor(n, A, x, vetAux);
-  subtracao_vetor_vetor(n, b, vetAux, r);
-  //printV(n, r);
-
-  // r2 = r;
-  copia_vetor(n, r, r2);
-  //printV(n, r);
+  //r2 = r;
+  copy_vector(i_n, pd_vector_r, pd_vector_r2);
 
   //rho = 1;
-  double rho = 1;
+  double d_rho = 1;
 
-  while (i < imax)
-  {
-    // rho0 = rho;
-    // rho = r2' * r;
-    // beta = rho / rho0
-    rho0 = rho;
-    //printf("rho0 = %f\n", rho0);
-    rho = multiplicacao_vetor_linha_vetor(n, r2, r);
-    //printf("rho = %f\n", rho);
-    beta = rho / rho0;
-    //printf("beta = %f\n", beta);
+  while(i_iteration < i_imax) {
+
+    //rho0 = rho;
+    //rho = r2' * r;
+    //beta = rho / rho0
+    d_rho0 = d_rho;
+    d_rho = mult_vector_row_vector(i_n, pd_vector_r2, pd_vector_r);
+    d_beta = d_rho / d_rho0;
 
     //p = r + beta*p;
     //p2 = r2 + beta*p2;
-    for (int i = 0; i < n; i++)
-    {
-      p[i] = r[i] + beta * p[i];
-      p2[i] = r2[i] + beta * p2[i];
+    for(int i_index=0; i_index<i_n; i_index++) {
+
+      pd_vector_p[i_index] = pd_vector_r[i_index] + d_beta * pd_vector_p[i_index];
+      pd_vector_p2[i_index] = pd_vector_r2[i_index] + d_beta * pd_vector_p2[i_index];
     }
-    // printV(n, p);
-    // printV(n, p2);
 
     //v = A * p;
-    multiplicacao_matriz_vetor(n, A, p, v);
-    //printV(n, v);
+    mult_mat_vector(i_n, pd_mat_a, pd_vector_p, pd_vector_v);
 
-    // alpha = rho/(p2'*v)
-    alpha = rho / multiplicacao_vetor_linha_vetor(n, p2, v);
-    //printf("alpha = %f\n", alpha);
+    //alpha = rho/(p2'*v)
+    d_alpha = d_rho / mult_vector_row_vector(i_n, pd_vector_p2, pd_vector_v);
 
-    //	x = x + alpha*p;
-    for (int i = 0; i < n; i++)
-    {
-      x[i] = x[i] + alpha * p[i];
+    //x = x + alpha*p;
+    for(int i_index=0 ; i_index<i_n ; i_index++) {
+      pd_vector_x[i_index] = pd_vector_x[i_index] + d_alpha * pd_vector_p[i_index];
     }
-    //printV(n, x);
 
-    double error = multiplicacao_vetor_linha_vetor(n, r, r);
-    // printf("Error=%f\n", error);
-    if (error < erro * erro)
-    {
+    d_calculated_error = mult_vector_row_vector(i_n, pd_vector_r, pd_vector_r);
+
+    if(d_calculated_error < (d_error*d_error)) {
       break;
     }
 
-    // r = r - alpha * v;
-    // r2 = r2 - alpha *A' * p2;
-    multiplicacao_matriz_linha_vetor(n, A, p2, vetAux);
-    for (int i = 0; i < n; i++)
-    {
-      r[i] = r[i] - alpha * v[i];
-      r2[i] = r2[i] - alpha * vetAux[i];
-    }
-    printV(n, r);
-    printV(n, r2);
+    //r = r - alpha * v;
+    //r2 = r2 - alpha *A' * p2;
+    mult_mat_row_vector(i_n, pd_mat_a, pd_vector_p2, pd_vector_aux);
+    for(int i_index=0 ; i_index<i_n ; i_index++) {
 
-    i = i + 1;
+      pd_vector_r[i_index] = pd_vector_r[i_index] - d_alpha * pd_vector_v[i_index];
+      pd_vector_r2[i_index] = pd_vector_r2[i_index] - d_alpha * pd_vector_aux[i_index];
+    }
+
+    print_vector_aux(i_n, pd_vector_r);
+    print_vector_aux(i_n, pd_vector_r2);
+
+    i_iteration += 1;
   }
 
-  printf("i = %d\n", i);
-
+  printf("Iteracao = %d\n", i_iteration);
   printf("x:\n");
-  print_vetor(n, x);
+  print_vector(i_n, pd_vector_x);
 }
+
+// ---------------------------------------------------------------------------------------------------------------------------------------
