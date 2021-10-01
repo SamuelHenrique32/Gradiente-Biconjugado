@@ -23,35 +23,35 @@ int main(int argc, char **argv);
 
 void init_mat(double *pd_mat_a) {
 
-  mat(0, 0) = 4;
+  mat(0, 0) = 5;
   mat(0, 1) = 0;
   mat(0, 2) = 0;
-  mat(0, 3) = 0;
-  mat(0, 4) = 0;
+  mat(0, 3) = 2;
+  mat(0, 4) = 1;
 
-  mat(1, 0) = 1;
-  mat(1, 1) = 4;
+  mat(1, 0) = 0;
+  mat(1, 1) = 5;
   mat(1, 2) = 0;
   mat(1, 3) = 0;
-  mat(1, 4) = 0;
+  mat(1, 4) = 2;
 
   mat(2, 0) = 0;
-  mat(2, 1) = 1;
-  mat(2, 2) = 4;
+  mat(2, 1) = 0;
+  mat(2, 2) = 5;
   mat(2, 3) = 0;
   mat(2, 4) = 0;
 
-  mat(3, 0) = 0;
+  mat(3, 0) = 2;
   mat(3, 1) = 0;
-  mat(3, 2) = 1;
-  mat(3, 3) = 4;
+  mat(3, 2) = 0;
+  mat(3, 3) = 5;
   mat(3, 4) = 0;
 
-  mat(4, 0) = 5;
-  mat(4, 1) = 0;
+  mat(4, 0) = 1;
+  mat(4, 1) = 2;
   mat(4, 2) = 0;
-  mat(4, 3) = 1;
-  mat(4, 4) = 4;
+  mat(4, 3) = 0;
+  mat(4, 4) = 5;
 }
 
 void init_vector(double *pd_vector, int i_n) {
@@ -228,8 +228,8 @@ int main(int argc, char **argv) {
     i_iteration += 1;
   }
 
-  printf("Iteracao = %d\n", i_iteration);
-  printf("x:\n");
+  printf("Iteracoes = %d\n\n", i_iteration);
+  printf("Resposta:\n");
   print_vector(i_n, pd_vector_x);
 }
 
