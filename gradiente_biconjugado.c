@@ -1,9 +1,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <iohb.h>
 
 #define kN_COLUMNS 5
 #define mat(i_row, i_col) pd_mat_a[i_row * kN_COLUMNS + i_col]
+
+// ---------------------------------------------------------------------------------------------------------------------------------------
+
+typedef struct
+{
+  int i_size_ptr;
+  int i_size_indexes;
+  int i_size_values;
+  int *pi_pointers;
+  int *pi_indexes;
+  double *pd_values;
+} matrix_hb_t;
 
 // ---------------------------------------------------------------------------------------------------------------------------------------
 
@@ -20,6 +33,32 @@ void print_vector(int i_n, double *pd_vector);
 int main(int argc, char **argv);
 
 // ---------------------------------------------------------------------------------------------------------------------------------------
+
+void read_matrix(char *pc_file, int *pi_m, int *pi_n, int *pi_non_zeros, int **ppi_colptr, int **ppi_rows, double **ppd_values) {
+
+	int i_result = 0, i_nrhs = 0;
+	char *pc_type = NULL;
+
+	i_result = readHB_info(pc_file, pi_m, pi_n, pi_non_zeros, &pc_type, &i_nrhs);
+
+  if(i_result == 0) {
+	  printf("Erro ao ler as informacoes da matriz\n");
+		exit(-1);
+	}
+
+	printf("Linhas: %d \t Colunas: %d \t Nao Zeros: %d \n\n", *pi_m, *pi_n, *pi_non_zeros);
+
+	*ppd_values = (double*) malloc(*pi_non_zeros * sizeof(double));
+	*ppi_rows = (int*) malloc(*pi_non_zeros * sizeof(int));
+	*ppi_colptr = (int*) malloc((*pi_n+1) * sizeof(int));
+
+	i_result = readHB_mat_double(pc_file, *ppi_colptr, *ppi_rows, *ppd_values);
+
+	if(i_result == 0) {
+    printf("Erro ao ler os valores da matriz!\n");
+    exit(-1);
+  }
+}
 
 void init_mat(double *pd_mat_a) {
 
@@ -168,6 +207,8 @@ int main(int argc, char **argv) {
   double d_alpha;
   double d_error = 0.00001;
   double d_calculated_error = 0;
+
+  matrix_hb_t *ps_mat_csc = malloc(sizeof(matrix_hb_t));
 
   //r = b - A*x;
   mult_mat_vector(i_n, pd_mat_a, pd_vector_x, pd_vector_aux);
