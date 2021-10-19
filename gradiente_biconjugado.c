@@ -4,6 +4,7 @@
 #include <iohb.h>
 
 #define kN_COLUMNS 5
+#define kQTD_ARGS 2
 #define mat(i_row, i_col) pd_mat_a[i_row * kN_COLUMNS + i_col]
 
 // ---------------------------------------------------------------------------------------------------------------------------------------
@@ -20,6 +21,7 @@ typedef struct
 
 // ---------------------------------------------------------------------------------------------------------------------------------------
 
+void read_matrix(char *pc_file, int *pi_m, int *pi_n, int *pi_non_zeros, int **ppi_colptr, int **ppi_rows, double **ppd_values);
 void init_mat(double *pd_mat_a);
 void init_vector(double *pd_vector, int i_n);
 double *aloc_vector(int i_size);
@@ -184,6 +186,7 @@ int main(int argc, char **argv) {
   int i_imax = 1000000;
   int i_iteration = 1;
   int i_n = kN_COLUMNS;
+  int i_M = 0, i_N = 0, i_non_zeros = 0;
 
   double *pd_mat_a = aloc_vector(i_n * i_n); //Vector as a matrix
   init_mat(pd_mat_a);
@@ -209,6 +212,17 @@ int main(int argc, char **argv) {
   double d_calculated_error = 0;
 
   matrix_hb_t *ps_mat_csc = malloc(sizeof(matrix_hb_t));
+
+  if(argc != kQTD_ARGS) {
+    printf("%s <file>\n", argv[0]);
+    exit(-1);
+  }
+
+  read_matrix(argv[1], &i_M, &i_N, &i_non_zeros, &ps_mat_csc->pi_pointers, &ps_mat_csc->pi_indexes, &ps_mat_csc->pd_values);
+
+  CSC->i_size_values = i_non_zeros;
+  CSC->i_size_pointers = i_M + 1;
+  CSC->i_size_indexes = i_non_zeros;
 
   //r = b - A*x;
   mult_mat_vector(i_n, pd_mat_a, pd_vector_x, pd_vector_aux);
@@ -263,8 +277,8 @@ int main(int argc, char **argv) {
       pd_vector_r2[i_index] = pd_vector_r2[i_index] - d_alpha * pd_vector_aux[i_index];
     }
 
-    print_vector_aux(i_n, pd_vector_r);
-    print_vector_aux(i_n, pd_vector_r2);
+    //print_vector_aux(i_n, pd_vector_r);
+    //print_vector_aux(i_n, pd_vector_r2);
 
     i_iteration += 1;
   }
