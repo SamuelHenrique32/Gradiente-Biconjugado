@@ -200,12 +200,7 @@ int main(int argc, char **argv) {
 
   int i_imax = 1000000;
   int i_iteration = 1;
-  //int i_n = kN_COLUMNS;
   int i_M = 0, i_N = 0, i_non_zeros = 0;
-
-  //x = zeros(n,1);
-  //p = zeros(n,1);
-  //p2 = zeros(n,1)
 
   double d_rho0;
   double d_beta;
