@@ -62,6 +62,52 @@ void read_matrix(char *pc_file, int *pi_m, int *pi_n, int *pi_non_zeros, int **p
   }
 }
 
+matrix_hb_t* prepare_matrix(matrix_hb_t *ps_matrix) {
+
+  matrix_hb_t *ps_matrix_b = malloc(sizeof(matrix_hb_t));
+  *ps_matrix_b = *ps_matrix;
+
+  ps_matrix_b->pi_pointers = calloc(sizeof(int), ps_matrix->i_size_ptr);
+  ps_matrix_b->pi_indexes = calloc(sizeof(int), ps_matrix->i_size_indexes);
+  ps_matrix_b->pd_values = calloc(sizeof(double), ps_matrix->i_size_indexes);
+
+  int i_n = ps_matrix->i_size_values; 
+  int i_nnz = ps_matrix->i_size_values;
+  int i_n_row = ps_matrix->i_size_ptr;
+  int i_jj = 0, i_row = 0;
+  int i_col = 0, i_dest = 0, i_temp = 0, i_cumsum = 0, i_last = 0;
+
+  for(i_n=0 ; i_n<i_nnz ; i_n++) {
+    ps_matrix_b->pi_pointers[ps_matrix->pi_indexes[i_n]-1]++;
+  }
+  
+  for(i_col=0, i_cumsum=1 ; i_col<i_n_row ; i_col++) {
+    i_temp = ps_matrix_b->pi_pointers[i_col];
+    ps_matrix_b->pi_pointers[i_col] = i_cumsum;
+    i_cumsum += i_temp;
+  }
+
+  for(i_row=0 ; i_row<i_n_row-1 ; i_row++) {
+    for(i_jj=(ps_matrix->pi_pointers[i_row] - 1) ; i_jj<(ps_matrix->pi_pointers[i_row + 1] - 1) ; i_jj++) {
+      i_col = ps_matrix->pi_indexes[i_jj] - 1;
+      i_dest = ps_matrix_b->pi_pointers[i_col] - 1;
+
+      ps_matrix_b->pi_indexes[i_dest] = i_row + 1;
+      ps_matrix_b->pd_values[i_dest] = ps_matrix->pd_values[i_jj];
+
+      ps_matrix_b->pi_pointers[i_col]++;
+    }
+  }
+
+  for(i_col=0, i_last=1 ; i_col<=i_n_row-1 ; i_col++) {
+    i_temp = ps_matrix_b->pi_pointers[i_col];
+    ps_matrix_b->pi_pointers[i_col] = i_last;
+    i_last = i_temp;
+  }
+
+  return ps_matrix_b;
+}
+
 void init_mat(double *pd_mat_a) {
 
   mat(0, 0) = 5;
@@ -212,6 +258,7 @@ int main(int argc, char **argv) {
   double d_calculated_error = 0;
 
   matrix_hb_t *ps_mat_csc = malloc(sizeof(matrix_hb_t));
+  matrix_hb_t *ps_mat_csr = NULL;
 
   if(argc != kQTD_ARGS) {
     printf("%s <file>\n", argv[0]);
@@ -220,9 +267,11 @@ int main(int argc, char **argv) {
 
   read_matrix(argv[1], &i_M, &i_N, &i_non_zeros, &ps_mat_csc->pi_pointers, &ps_mat_csc->pi_indexes, &ps_mat_csc->pd_values);
 
-  CSC->i_size_values = i_non_zeros;
-  CSC->i_size_pointers = i_M + 1;
-  CSC->i_size_indexes = i_non_zeros;
+  ps_mat_csc->i_size_values = i_non_zeros;
+  ps_mat_csc->i_size_ptr = i_M + 1;
+  ps_mat_csc->i_size_indexes = i_non_zeros;
+
+  ps_mat_csr = prepare_matrix(ps_mat_csc);
 
   //r = b - A*x;
   mult_mat_vector(i_n, pd_mat_a, pd_vector_x, pd_vector_aux);
