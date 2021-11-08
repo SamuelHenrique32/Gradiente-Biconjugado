@@ -2,10 +2,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <iohb.h>
+#include <mpi.h>
 
 #define kN_COLUMNS 5
 #define kQTD_ARGS 2
 #define mat(i_row, i_col) pd_mat_a[i_row * kN_COLUMNS + i_col]
+#define kMAIN_PROC 0
 
 // ---------------------------------------------------------------------------------------------------------------------------------------
 
@@ -201,6 +203,7 @@ int main(int argc, char **argv) {
   int i_imax = 1000000;
   int i_iteration = 1;
   int i_M = 0, i_N = 0, i_non_zeros = 0;
+  int i_id = 0, i_n_proc = 0;
 
   double d_rho0;
   double d_beta;
@@ -211,10 +214,21 @@ int main(int argc, char **argv) {
   matrix_hb_t *ps_mat_csc = malloc(sizeof(matrix_hb_t));
   matrix_hb_t *ps_mat_csr = NULL;
 
-  if(argc != kQTD_ARGS) {
-    printf("%s <file>\n", argv[0]);
-    exit(-1);
+  MPI_Status v_mpi_status = {0};
+
+  MPI_Init(&argc, &argv);
+	MPI_Comm_rank(MPI_COMM_WORLD, &i_id);
+	MPI_Comm_size(MPI_COMM_WORLD, &i_n_proc);
+
+  if(i_id==kMAIN_PROC) {
+
+    if(argc != kQTD_ARGS) {
+      printf("%s <file>\n", argv[0]);
+      exit(-1);
+    }
   }
+
+  
 
   read_matrix(argv[1], &i_M, &i_N, &i_non_zeros, &ps_mat_csc->pi_pointers, &ps_mat_csc->pi_indexes, &ps_mat_csc->pd_values);
 
