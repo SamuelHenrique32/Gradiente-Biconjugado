@@ -228,7 +228,12 @@ int main(int argc, char **argv) {
 
   //Send variables -------------------------------------------------------------------------------
   int i_M_send = 0, i_N_send = 0, i_non_zeros_send = 0;
-  matrix_hb_t *ps_mat_csc_send = malloc(sizeof(matrix_hb_t));
+
+  //CSC matrix to send
+  int *pi_pointers_send;
+  int *pi_indexes_send;
+  double *pd_values_send;
+
   //Send variables -------------------------------------------------------------------------------
 
   //All processes has ----------------------------------------------------------------------------
@@ -238,7 +243,7 @@ int main(int argc, char **argv) {
 	MPI_Comm_size(MPI_COMM_WORLD, &i_n_proc);
 
   // Main process
-  //if(i_id==kMAIN_PROC) {
+  if(i_id==kMAIN_PROC) {
 
     if(argc != kQTD_ARGS) {
       printf("%s <file>\n", argv[0]);
@@ -246,13 +251,16 @@ int main(int argc, char **argv) {
     }
 
     read_matrix(argv[1], &i_M, &i_N, &i_non_zeros, &ps_mat_csc->pi_pointers, &ps_mat_csc->pi_indexes, &ps_mat_csc->pd_values);
-  //}
-  //Not main process
-  //else {
+  }
+  //Another process
+  else {
+    
+  }
 
-  //}
+  MPI_Bcast(&i_M, 1, MPI_INT, kMAIN_PROC, MPI_COMM_WORLD);
+  MPI_Bcast(&i_N, 1, MPI_INT, kMAIN_PROC, MPI_COMM_WORLD);
 
-  ps_mat_csr = prepare_matrix(ps_mat_csc, i_non_zeros, i_M);
+  /*ps_mat_csr = prepare_matrix(ps_mat_csc, i_non_zeros, i_M);
 
   double *pd_vector_x = aloc_vector(i_N);
   double *pd_vector_p = aloc_vector(i_N);
@@ -344,7 +352,7 @@ int main(int argc, char **argv) {
   free(pd_vector_r);
   free(pd_vector_aux);
   free(pd_vector_v);
-  free(pd_vector_r2);
+  free(pd_vector_r2);*/
 
   MPI_Finalize();
 }
