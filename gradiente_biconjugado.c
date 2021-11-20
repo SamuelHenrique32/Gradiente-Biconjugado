@@ -12,9 +12,9 @@
 // ---------------------------------------------------------------------------------------------------------------------------------------
 
 typedef struct {
-  int i_size_ptr;
-  int i_size_indexes;
-  int i_size_values;
+  //int i_size_ptr;
+  //int i_size_indexes;
+  //int i_size_values;
   int *pi_pointers;
   int *pi_indexes;
   double *pd_values;
@@ -23,7 +23,7 @@ typedef struct {
 // ---------------------------------------------------------------------------------------------------------------------------------------
 
 void read_matrix(char *pc_file, int *pi_m, int *pi_n, int *pi_non_zeros, int **ppi_colptr, int **ppi_rows, double **ppd_values);
-matrix_hb_t* prepare_matrix(matrix_hb_t *ps_matrix);
+matrix_hb_t* prepare_matrix(matrix_hb_t *ps_matrix, int i_non_zeros, int i_M);
 void init_vector(double *pd_vector, int i_n);
 double *aloc_vector(int i_size);
 void mult_mat_vector(int i_n, double *pd_val, int *pi_col, int *pi_ptr, double *pd_vet, double *pd_res);
@@ -37,6 +37,15 @@ int main(int argc, char **argv);
 
 // ---------------------------------------------------------------------------------------------------------------------------------------
 
+/* Parameters
+   pc_file: file name
+   pi_m: number of rows
+   pi_n: number of columns
+   pi_non_zeros: number of nonzeros in the matrix
+   ppi_colptr: columns pointer
+   ppi_rows: rows pointer
+   ppd_values: values pointer
+*/
 void read_matrix(char *pc_file, int *pi_m, int *pi_n, int *pi_non_zeros, int **ppi_colptr, int **ppi_rows, double **ppd_values) {
 
 	int i_result = 0, i_nrhs = 0;
@@ -63,18 +72,18 @@ void read_matrix(char *pc_file, int *pi_m, int *pi_n, int *pi_non_zeros, int **p
   }
 }
 
-matrix_hb_t* prepare_matrix(matrix_hb_t *ps_matrix) {
+matrix_hb_t* prepare_matrix(matrix_hb_t *ps_matrix, int i_non_zeros, int i_M) {
 
   matrix_hb_t *ps_matrix_b = malloc(sizeof(matrix_hb_t));
   *ps_matrix_b = *ps_matrix;
 
-  ps_matrix_b->pi_pointers = calloc(sizeof(int), ps_matrix->i_size_ptr);
-  ps_matrix_b->pi_indexes = calloc(sizeof(int), ps_matrix->i_size_indexes);
-  ps_matrix_b->pd_values = calloc(sizeof(double), ps_matrix->i_size_indexes);
+  ps_matrix_b->pi_pointers = calloc(sizeof(int), i_M + 1);
+  ps_matrix_b->pi_indexes = calloc(sizeof(int), i_non_zeros);
+  ps_matrix_b->pd_values = calloc(sizeof(double), i_non_zeros);
 
-  int i_n = ps_matrix->i_size_values; 
-  int i_nnz = ps_matrix->i_size_values;
-  int i_n_row = ps_matrix->i_size_ptr;
+  int i_n = i_non_zeros; 
+  int i_nnz = i_non_zeros;
+  int i_n_row = i_M + 1;
   int i_jj = 0, i_row = 0;
   int i_col = 0, i_dest = 0, i_temp = 0, i_cumsum = 0, i_last = 0;
 
@@ -200,6 +209,7 @@ void print_vector(int i_n, double *pd_vector) {
 
 int main(int argc, char **argv) {
 
+  //All processes has ----------------------------------------------------------------------------
   int i_imax = 1000000;
   int i_iteration = 1;
   int i_M = 0, i_N = 0, i_non_zeros = 0;
@@ -216,27 +226,33 @@ int main(int argc, char **argv) {
 
   MPI_Status v_mpi_status = {0};
 
+  //Send variables -------------------------------------------------------------------------------
+  int i_M_send = 0, i_N_send = 0, i_non_zeros_send = 0;
+  matrix_hb_t *ps_mat_csc_send = malloc(sizeof(matrix_hb_t));
+  //Send variables -------------------------------------------------------------------------------
+
+  //All processes has ----------------------------------------------------------------------------
+
   MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &i_id);
 	MPI_Comm_size(MPI_COMM_WORLD, &i_n_proc);
 
-  if(i_id==kMAIN_PROC) {
+  // Main process
+  //if(i_id==kMAIN_PROC) {
 
     if(argc != kQTD_ARGS) {
       printf("%s <file>\n", argv[0]);
       exit(-1);
     }
-  }
 
-  
+    read_matrix(argv[1], &i_M, &i_N, &i_non_zeros, &ps_mat_csc->pi_pointers, &ps_mat_csc->pi_indexes, &ps_mat_csc->pd_values);
+  //}
+  //Not main process
+  //else {
 
-  read_matrix(argv[1], &i_M, &i_N, &i_non_zeros, &ps_mat_csc->pi_pointers, &ps_mat_csc->pi_indexes, &ps_mat_csc->pd_values);
+  //}
 
-  ps_mat_csc->i_size_values = i_non_zeros;
-  ps_mat_csc->i_size_ptr = i_M + 1;
-  ps_mat_csc->i_size_indexes = i_non_zeros;
-
-  ps_mat_csr = prepare_matrix(ps_mat_csc);
+  ps_mat_csr = prepare_matrix(ps_mat_csc, i_non_zeros, i_M);
 
   double *pd_vector_x = aloc_vector(i_N);
   double *pd_vector_p = aloc_vector(i_N);
@@ -329,6 +345,8 @@ int main(int argc, char **argv) {
   free(pd_vector_aux);
   free(pd_vector_v);
   free(pd_vector_r2);
+
+  MPI_Finalize();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------------------------
