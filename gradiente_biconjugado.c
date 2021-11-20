@@ -211,24 +211,10 @@ int main(int argc, char **argv) {
   double d_error = 0.00001;
   double d_calculated_error = 0;
 
-  double *pd_vector_x = NULL;
-  double *pd_vector_p = NULL;
-  double *pd_vector_p2 = NULL;
-
-  double *pd_vector_r = NULL;
-  double *pd_vector_aux = NULL;
-  double *pd_vector_v = NULL;
-  double *pd_vector_r2 = NULL;
-
-  double *pd_vector_b = NULL;
-
   matrix_hb_t *ps_mat_csc = malloc(sizeof(matrix_hb_t));
   matrix_hb_t *ps_mat_csr = NULL;
 
   MPI_Status v_mpi_status = {0};
-
-  //Data to be sent
-  int i_N_send = 0;
 
   MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &i_id);
@@ -240,111 +226,109 @@ int main(int argc, char **argv) {
       printf("%s <file>\n", argv[0]);
       exit(-1);
     }
-
-    read_matrix(argv[1], &i_M, &i_N, &i_non_zeros, &ps_mat_csc->pi_pointers, &ps_mat_csc->pi_indexes, &ps_mat_csc->pd_values);
-
-    ps_mat_csc->i_size_values = i_non_zeros;
-    ps_mat_csc->i_size_ptr = i_M + 1;
-    ps_mat_csc->i_size_indexes = i_non_zeros;
-
-    ps_mat_csr = prepare_matrix(ps_mat_csc);
-
-    pd_vector_x = aloc_vector(i_N);
-    pd_vector_p = aloc_vector(i_N);
-    pd_vector_p2 = aloc_vector(i_N);
-
-    pd_vector_r = aloc_vector(i_N);
-    pd_vector_aux = aloc_vector(i_N);
-    pd_vector_v = aloc_vector(i_N);
-    pd_vector_r2 = aloc_vector(i_N);
-
-    pd_vector_b = aloc_vector(i_N);
-    init_vector(pd_vector_b, i_N);
-
-    //r = b - A*x;
-    mult_mat_vector(i_N, ps_mat_csr->pd_values, ps_mat_csr->pi_indexes, ps_mat_csr->pi_pointers, pd_vector_x, pd_vector_aux);
-    sub_vector_vector(i_N, pd_vector_b, pd_vector_aux, pd_vector_r);
-
-    //r2 = r;
-    copy_vector(i_N, pd_vector_r, pd_vector_r2);
-
-    //rho = 1;
-    double d_rho = 1;
-
-    while(i_iteration < i_imax) {
-
-      //rho0 = rho;
-      //rho = r2' * r;
-      //beta = rho / rho0
-      d_rho0 = d_rho;
-      d_rho = mult_vector_row_vector(i_N, pd_vector_r2, pd_vector_r);
-      d_beta = d_rho / d_rho0;
-
-      //p = r + beta*p;
-      //p2 = r2 + beta*p2;
-      for(int i_index=0; i_index<i_N; i_index++) {
-
-        pd_vector_p[i_index] = pd_vector_r[i_index] + d_beta * pd_vector_p[i_index];
-        pd_vector_p2[i_index] = pd_vector_r2[i_index] + d_beta * pd_vector_p2[i_index];
-      }
-
-      //v = A * p;    
-      mult_mat_vector(i_N, ps_mat_csr->pd_values, ps_mat_csr->pi_indexes, ps_mat_csr->pi_pointers, pd_vector_p, pd_vector_v);
-
-      //alpha = rho/(p2'*v)
-      d_alpha = d_rho / mult_vector_row_vector(i_N, pd_vector_p2, pd_vector_v);
-
-      //x = x + alpha*p;
-      for(int i_index=0 ; i_index<i_N ; i_index++) {
-        pd_vector_x[i_index] = pd_vector_x[i_index] + d_alpha * pd_vector_p[i_index];
-      }
-
-      d_calculated_error = mult_vector_row_vector(i_N, pd_vector_r, pd_vector_r);
-
-      if(d_calculated_error < (d_error*d_error)) {
-        break;
-      }
-
-      //r = r - alpha * v;
-      //r2 = r2 - alpha *A' * p2;
-      mult_mat_row_vector(i_N, ps_mat_csc->pd_values, ps_mat_csc->pi_indexes, ps_mat_csc->pi_pointers, pd_vector_p2, pd_vector_aux);
-      for(int i_index=0 ; i_index<i_N ; i_index++) {
-
-        pd_vector_r[i_index] = pd_vector_r[i_index] - d_alpha * pd_vector_v[i_index];
-        pd_vector_r2[i_index] = pd_vector_r2[i_index] - d_alpha * pd_vector_aux[i_index];
-      }
-
-      //print_vector_aux(i_n, pd_vector_r);
-      //print_vector_aux(i_n, pd_vector_r2);
-
-      i_iteration += 1;
-    }
-
-    printf("Iteracoes = %d\n\n", i_iteration);
-    printf("Resposta:\n");
-    print_vector(i_N, pd_vector_x);
-
-    free(ps_mat_csr->pd_values);
-    free(ps_mat_csr->pi_pointers);
-    free(ps_mat_csr->pi_indexes);
-
-    free(ps_mat_csc->pd_values);
-    free(ps_mat_csc->pi_pointers);
-    free(ps_mat_csc->pi_indexes);
-
-    free(pd_vector_b);
-    free(pd_vector_x);
-    free(pd_vector_p);
-    free(pd_vector_p2);
-    free(pd_vector_r);
-    free(pd_vector_aux);
-    free(pd_vector_v);
-    free(pd_vector_r2);
   }
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  
 
-  MPI_Finalize();
+  read_matrix(argv[1], &i_M, &i_N, &i_non_zeros, &ps_mat_csc->pi_pointers, &ps_mat_csc->pi_indexes, &ps_mat_csc->pd_values);
+
+  ps_mat_csc->i_size_values = i_non_zeros;
+  ps_mat_csc->i_size_ptr = i_M + 1;
+  ps_mat_csc->i_size_indexes = i_non_zeros;
+
+  ps_mat_csr = prepare_matrix(ps_mat_csc);
+
+  double *pd_vector_x = aloc_vector(i_N);
+  double *pd_vector_p = aloc_vector(i_N);
+  double *pd_vector_p2 = aloc_vector(i_N);
+
+  double *pd_vector_r = aloc_vector(i_N);
+  double *pd_vector_aux = aloc_vector(i_N);
+  double *pd_vector_v = aloc_vector(i_N);
+  double *pd_vector_r2 = aloc_vector(i_N);
+
+  double *pd_vector_b = aloc_vector(i_N);
+  init_vector(pd_vector_b, i_N);
+
+  //r = b - A*x;
+  mult_mat_vector(i_N, ps_mat_csr->pd_values, ps_mat_csr->pi_indexes, ps_mat_csr->pi_pointers, pd_vector_x, pd_vector_aux);
+  sub_vector_vector(i_N, pd_vector_b, pd_vector_aux, pd_vector_r);
+
+  //r2 = r;
+  copy_vector(i_N, pd_vector_r, pd_vector_r2);
+
+  //rho = 1;
+  double d_rho = 1;
+
+  while(i_iteration < i_imax) {
+
+    //rho0 = rho;
+    //rho = r2' * r;
+    //beta = rho / rho0
+    d_rho0 = d_rho;
+    d_rho = mult_vector_row_vector(i_N, pd_vector_r2, pd_vector_r);
+    d_beta = d_rho / d_rho0;
+
+    //p = r + beta*p;
+    //p2 = r2 + beta*p2;
+    for(int i_index=0; i_index<i_N; i_index++) {
+
+      pd_vector_p[i_index] = pd_vector_r[i_index] + d_beta * pd_vector_p[i_index];
+      pd_vector_p2[i_index] = pd_vector_r2[i_index] + d_beta * pd_vector_p2[i_index];
+    }
+
+    //v = A * p;    
+    mult_mat_vector(i_N, ps_mat_csr->pd_values, ps_mat_csr->pi_indexes, ps_mat_csr->pi_pointers, pd_vector_p, pd_vector_v);
+
+    //alpha = rho/(p2'*v)
+    d_alpha = d_rho / mult_vector_row_vector(i_N, pd_vector_p2, pd_vector_v);
+
+    //x = x + alpha*p;
+    for(int i_index=0 ; i_index<i_N ; i_index++) {
+      pd_vector_x[i_index] = pd_vector_x[i_index] + d_alpha * pd_vector_p[i_index];
+    }
+
+    d_calculated_error = mult_vector_row_vector(i_N, pd_vector_r, pd_vector_r);
+
+    if(d_calculated_error < (d_error*d_error)) {
+      break;
+    }
+
+    //r = r - alpha * v;
+    //r2 = r2 - alpha *A' * p2;
+    mult_mat_row_vector(i_N, ps_mat_csc->pd_values, ps_mat_csc->pi_indexes, ps_mat_csc->pi_pointers, pd_vector_p2, pd_vector_aux);
+    for(int i_index=0 ; i_index<i_N ; i_index++) {
+
+      pd_vector_r[i_index] = pd_vector_r[i_index] - d_alpha * pd_vector_v[i_index];
+      pd_vector_r2[i_index] = pd_vector_r2[i_index] - d_alpha * pd_vector_aux[i_index];
+    }
+
+    //print_vector_aux(i_n, pd_vector_r);
+    //print_vector_aux(i_n, pd_vector_r2);
+
+    i_iteration += 1;
+  }
+
+  printf("Iteracoes = %d\n\n", i_iteration);
+  printf("Resposta:\n");
+  print_vector(i_N, pd_vector_x);
+
+  free(ps_mat_csr->pd_values);
+  free(ps_mat_csr->pi_pointers);
+  free(ps_mat_csr->pi_indexes);
+
+  free(ps_mat_csc->pd_values);
+  free(ps_mat_csc->pi_pointers);
+  free(ps_mat_csc->pi_indexes);
+
+  free(pd_vector_b);
+  free(pd_vector_x);
+  free(pd_vector_p);
+  free(pd_vector_p2);
+  free(pd_vector_r);
+  free(pd_vector_aux);
+  free(pd_vector_v);
+  free(pd_vector_r2);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------------------------
