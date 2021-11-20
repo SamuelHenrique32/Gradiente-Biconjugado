@@ -261,7 +261,19 @@ int main(int argc, char **argv) {
   MPI_Bcast(&i_N, 1, MPI_INT, kMAIN_PROC, MPI_COMM_WORLD);
   MPI_Bcast(&i_non_zeros, 1, MPI_INT, kMAIN_PROC, MPI_COMM_WORLD);
 
-  printf("ID: %d Non zeros = %d\n", i_id, i_non_zeros);
+  //Now, just main process has it already allocated
+  if(ps_mat_csc->pi_pointers==NULL) {
+    //printf("ID: %d ps_mat_csc->pd_values = %d\n", i_id, ps_mat_csc->pd_values);
+
+    ps_mat_csc->pi_pointers = (int*) malloc((i_N+1) * sizeof(int));
+    //ps_mat_csc->pi_indexes
+    //ps_mat_csc->pd_values
+  }
+
+  MPI_Bcast(ps_mat_csc->pi_pointers, i_N+1, MPI_INT, kMAIN_PROC, MPI_COMM_WORLD);
+  printf("ID: %d ps_mat_csc->pi_pointers[0] = %d\n", i_id, ps_mat_csc->pi_pointers[0]);
+  printf("ID: %d ps_mat_csc->pi_pointers[0] = %d\n", i_id, ps_mat_csc->pi_pointers[1]);
+  printf("ID: %d ps_mat_csc->pi_pointers[0] = %d\n", i_id, ps_mat_csc->pi_pointers[2]);  
 
   /*ps_mat_csr = prepare_matrix(ps_mat_csc, i_non_zeros, i_M);
 
