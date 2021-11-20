@@ -267,15 +267,16 @@ int main(int argc, char **argv) {
 
     ps_mat_csc->pi_pointers = (int*) malloc((i_N+1) * sizeof(int));
     ps_mat_csc->pi_indexes = (int*) malloc(i_non_zeros * sizeof(int));
-    //ps_mat_csc->pd_values
+    ps_mat_csc->pd_values = (double*) malloc(i_non_zeros * sizeof(double)); 
   }
 
   MPI_Bcast(ps_mat_csc->pi_pointers, i_N+1, MPI_INT, kMAIN_PROC, MPI_COMM_WORLD);
   MPI_Bcast(ps_mat_csc->pi_indexes, i_non_zeros, MPI_INT, kMAIN_PROC, MPI_COMM_WORLD);
+  MPI_Bcast(ps_mat_csc->pd_values, i_non_zeros, MPI_DOUBLE, kMAIN_PROC, MPI_COMM_WORLD);
 
-  printf("ID: %d ps_mat_csc->pi_indexes[0] = %d\n", i_id, ps_mat_csc->pi_indexes[0]);
-  printf("ID: %d ps_mat_csc->pi_indexes[0] = %d\n", i_id, ps_mat_csc->pi_indexes[1]);
-  printf("ID: %d ps_mat_csc->pi_indexes[0] = %d\n", i_id, ps_mat_csc->pi_indexes[2]);
+  printf("ID: %d ps_mat_csc->pd_values[0] = %f\n", i_id, ps_mat_csc->pd_values[0]);
+  printf("ID: %d ps_mat_csc->pd_values[0] = %f\n", i_id, ps_mat_csc->pd_values[1]);
+  printf("ID: %d ps_mat_csc->pd_values[0] = %f\n", i_id, ps_mat_csc->pd_values[2]);
 
   /*ps_mat_csr = prepare_matrix(ps_mat_csc, i_non_zeros, i_M);
 
