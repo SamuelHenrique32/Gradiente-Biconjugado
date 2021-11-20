@@ -259,6 +259,9 @@ int main(int argc, char **argv) {
 
   MPI_Bcast(&i_M, 1, MPI_INT, kMAIN_PROC, MPI_COMM_WORLD);
   MPI_Bcast(&i_N, 1, MPI_INT, kMAIN_PROC, MPI_COMM_WORLD);
+  MPI_Bcast(&i_non_zeros, 1, MPI_INT, kMAIN_PROC, MPI_COMM_WORLD);
+
+  printf("ID: %d Non zeros = %d\n", i_id, i_non_zeros);
 
   /*ps_mat_csr = prepare_matrix(ps_mat_csc, i_non_zeros, i_M);
 
