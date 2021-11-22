@@ -215,9 +215,9 @@ int main(int argc, char **argv) {
   int i_M = 0, i_N = 0, i_non_zeros = 0;
   int i_id = 0, i_n_proc = 0;
 
-  double d_rho0;
-  double d_beta;
-  double d_alpha;
+  double d_rho0 = 0;
+  double d_beta = 0;
+  double d_alpha = 0;
   double d_error = 0.00001;
   double d_calculated_error = 0;
 
@@ -227,12 +227,6 @@ int main(int argc, char **argv) {
   MPI_Status v_mpi_status = {0};
 
   //Send variables -------------------------------------------------------------------------------
-  int i_M_send = 0, i_N_send = 0, i_non_zeros_send = 0;
-
-  //CSC matrix to send
-  int *pi_pointers_send;
-  int *pi_indexes_send;
-  double *pd_values_send;
 
   //Send variables -------------------------------------------------------------------------------
 
@@ -262,7 +256,7 @@ int main(int argc, char **argv) {
   MPI_Bcast(&i_non_zeros, 1, MPI_INT, kMAIN_PROC, MPI_COMM_WORLD);
 
   //Now, just main process has it already allocated
-  if(ps_mat_csc->pi_pointers==NULL) {
+  if(i_id != kMAIN_PROC) {
     //printf("ID: %d ps_mat_csc->pd_values = %d\n", i_id, ps_mat_csc->pd_values);
 
     ps_mat_csc->pi_pointers = (int*) malloc((i_N+1) * sizeof(int));
@@ -274,12 +268,27 @@ int main(int argc, char **argv) {
   MPI_Bcast(ps_mat_csc->pi_indexes, i_non_zeros, MPI_INT, kMAIN_PROC, MPI_COMM_WORLD);
   MPI_Bcast(ps_mat_csc->pd_values, i_non_zeros, MPI_DOUBLE, kMAIN_PROC, MPI_COMM_WORLD);
 
-  printf("ID: %d ps_mat_csc->pd_values[0] = %f\n", i_id, ps_mat_csc->pd_values[0]);
-  printf("ID: %d ps_mat_csc->pd_values[0] = %f\n", i_id, ps_mat_csc->pd_values[1]);
-  printf("ID: %d ps_mat_csc->pd_values[0] = %f\n", i_id, ps_mat_csc->pd_values[2]);
+  if(i_id == kMAIN_PROC) {
+    ps_mat_csr = prepare_matrix(ps_mat_csc, i_non_zeros, i_M);    
 
-  /*ps_mat_csr = prepare_matrix(ps_mat_csc, i_non_zeros, i_M);
+    printf("ID: %d ps_mat_csr->pd_values[0] = %f\n", i_id, ps_mat_csr->pd_values[0]);
+  }
 
+  //Now, just main process has it already allocated
+  if(i_id != kMAIN_PROC) {
+
+    ps_mat_csr = malloc(sizeof(matrix_hb_t));
+
+    ps_mat_csr->pi_pointers = (int*) calloc(sizeof(int), i_M + 1);
+    ps_mat_csr->pi_indexes = (int*) calloc(sizeof(int), i_non_zeros);
+    ps_mat_csr->pd_values = (double*) calloc(sizeof(double), i_non_zeros);
+  }
+
+  MPI_Bcast(ps_mat_csr->pi_pointers, i_M + 1, MPI_INT, kMAIN_PROC, MPI_COMM_WORLD);
+
+  printf("ID: %d ps_mat_csr->pi_pointers[0] = %d\n", i_id, ps_mat_csr->pi_pointers[0]);
+  
+  /*
   double *pd_vector_x = aloc_vector(i_N);
   double *pd_vector_p = aloc_vector(i_N);
   double *pd_vector_p2 = aloc_vector(i_N);
