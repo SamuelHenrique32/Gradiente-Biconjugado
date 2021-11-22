@@ -271,7 +271,7 @@ int main(int argc, char **argv) {
   if(i_id == kMAIN_PROC) {
     ps_mat_csr = prepare_matrix(ps_mat_csc, i_non_zeros, i_M);    
 
-    printf("ID: %d ps_mat_csr->pi_indexes[0] = %d\n", i_id, ps_mat_csr->pi_indexes[0]);
+    printf("ID: %d ps_mat_csr->pd_values[0] = %f\n", i_id, ps_mat_csr->pd_values[0]);
   }
 
   //Now, just main process has it already allocated
@@ -286,8 +286,9 @@ int main(int argc, char **argv) {
 
   MPI_Bcast(ps_mat_csr->pi_pointers, i_M + 1, MPI_INT, kMAIN_PROC, MPI_COMM_WORLD);
   MPI_Bcast(ps_mat_csr->pi_indexes, i_non_zeros, MPI_INT, kMAIN_PROC, MPI_COMM_WORLD);
+  MPI_Bcast(ps_mat_csr->pd_values, i_non_zeros, MPI_DOUBLE, kMAIN_PROC, MPI_COMM_WORLD);
 
-  printf("ID: %d ps_mat_csr->pi_indexes[0] = %d\n", i_id, ps_mat_csr->pi_indexes[0]);
+  printf("ID: %d ps_mat_csr->pd_values[0] = %f\n", i_id, ps_mat_csr->pd_values[0]);
   
   /*
   double *pd_vector_x = aloc_vector(i_N);
