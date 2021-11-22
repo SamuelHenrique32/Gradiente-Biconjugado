@@ -221,6 +221,15 @@ int main(int argc, char **argv) {
   double d_error = 0.00001;
   double d_calculated_error = 0;
 
+  double *pd_vector_x = NULL;
+  double *pd_vector_p = NULL;
+  double *pd_vector_p2 = NULL;
+  double *pd_vector_r = NULL;
+  double *pd_vector_aux = NULL;
+  double *pd_vector_v = NULL;
+  double *pd_vector_r2 = NULL;
+  double *pd_vector_b = NULL;;
+
   matrix_hb_t *ps_mat_csc = malloc(sizeof(matrix_hb_t));
   matrix_hb_t *ps_mat_csr = NULL;
 
@@ -228,9 +237,9 @@ int main(int argc, char **argv) {
 
   //Send variables -------------------------------------------------------------------------------
 
-  //Send variables -------------------------------------------------------------------------------
+  //End send variables -------------------------------------------------------------------------------
 
-  //All processes has ----------------------------------------------------------------------------
+  //End all processes has ----------------------------------------------------------------------------
 
   MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &i_id);
@@ -268,7 +277,18 @@ int main(int argc, char **argv) {
   MPI_Bcast(ps_mat_csc->pi_indexes, i_non_zeros, MPI_INT, kMAIN_PROC, MPI_COMM_WORLD);
   MPI_Bcast(ps_mat_csc->pd_values, i_non_zeros, MPI_DOUBLE, kMAIN_PROC, MPI_COMM_WORLD);
 
+  pd_vector_x = aloc_vector(i_N);
+  pd_vector_p = aloc_vector(i_N);
+  pd_vector_p2 = aloc_vector(i_N);
+  pd_vector_r = aloc_vector(i_N);
+  pd_vector_aux = aloc_vector(i_N);
+  pd_vector_v = aloc_vector(i_N);
+  pd_vector_r2 = aloc_vector(i_N);
+  pd_vector_b = aloc_vector(i_N);
+
   if(i_id == kMAIN_PROC) {
+    init_vector(pd_vector_b, i_N);
+
     ps_mat_csr = prepare_matrix(ps_mat_csc, i_non_zeros, i_M);    
 
     printf("ID: %d ps_mat_csr->pd_values[0] = %f\n", i_id, ps_mat_csr->pd_values[0]);
@@ -287,25 +307,12 @@ int main(int argc, char **argv) {
   MPI_Bcast(ps_mat_csr->pi_pointers, i_M + 1, MPI_INT, kMAIN_PROC, MPI_COMM_WORLD);
   MPI_Bcast(ps_mat_csr->pi_indexes, i_non_zeros, MPI_INT, kMAIN_PROC, MPI_COMM_WORLD);
   MPI_Bcast(ps_mat_csr->pd_values, i_non_zeros, MPI_DOUBLE, kMAIN_PROC, MPI_COMM_WORLD);
-
-  printf("ID: %d ps_mat_csr->pd_values[0] = %f\n", i_id, ps_mat_csr->pd_values[0]);
+  MPI_Bcast(pd_vector_b, i_N, MPI_DOUBLE, kMAIN_PROC, MPI_COMM_WORLD);
+  //printf("ID: %d ps_mat_csr->pd_values[0] = %f\n", i_id, ps_mat_csr->pd_values[0]);
   
-  /*
-  double *pd_vector_x = aloc_vector(i_N);
-  double *pd_vector_p = aloc_vector(i_N);
-  double *pd_vector_p2 = aloc_vector(i_N);
-
-  double *pd_vector_r = aloc_vector(i_N);
-  double *pd_vector_aux = aloc_vector(i_N);
-  double *pd_vector_v = aloc_vector(i_N);
-  double *pd_vector_r2 = aloc_vector(i_N);
-
-  double *pd_vector_b = aloc_vector(i_N);
-  init_vector(pd_vector_b, i_N);
-
   //r = b - A*x;
   mult_mat_vector(i_N, ps_mat_csr->pd_values, ps_mat_csr->pi_indexes, ps_mat_csr->pi_pointers, pd_vector_x, pd_vector_aux);
-  sub_vector_vector(i_N, pd_vector_b, pd_vector_aux, pd_vector_r);
+  /*sub_vector_vector(i_N, pd_vector_b, pd_vector_aux, pd_vector_r);
 
   //r2 = r;
   copy_vector(i_N, pd_vector_r, pd_vector_r2);
@@ -381,7 +388,8 @@ int main(int argc, char **argv) {
   free(pd_vector_r);
   free(pd_vector_aux);
   free(pd_vector_v);
-  free(pd_vector_r2);*/
+  free(pd_vector_r2);
+  */
 
   MPI_Finalize();
 }
