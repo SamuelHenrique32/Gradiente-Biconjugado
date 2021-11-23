@@ -367,6 +367,7 @@ int main(int argc, char **argv) {
 
     //v = A * p;    
     mult_mat_vector_parallel(i_id, i_n_proc, i_N, ps_mat_csr->pd_values, ps_mat_csr->pi_indexes, ps_mat_csr->pi_pointers, pd_vector_p, pd_vector_v_part);
+    //mult_mat_vector(i_N, ps_mat_csr->pd_values, ps_mat_csr->pi_indexes, ps_mat_csr->pi_pointers, pd_vector_p, pd_vector_v);
 
     MPI_Allgather(pd_vector_v_part, i_N/i_n_proc, MPI_DOUBLE, pd_vector_v, i_N/i_n_proc, MPI_DOUBLE, MPI_COMM_WORLD);
 
@@ -404,6 +405,8 @@ int main(int argc, char **argv) {
 
     i_iteration += 1;
   }
+
+  MPI_Barrier(MPI_COMM_WORLD);
 
   if(i_id == kMAIN_PROC) {
     printf("Iteracoes = %d\n\n", i_iteration);
