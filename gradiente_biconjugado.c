@@ -23,7 +23,7 @@ void read_matrix(char *pc_file, int *pi_m, int *pi_n, int *pi_non_zeros, int **p
 matrix_hb_t* prepare_matrix(matrix_hb_t *ps_matrix, int i_non_zeros, int i_M);
 void init_vector(double *pd_vector, int i_n);
 double *aloc_vector(int i_size);
-void mult_mat_vector_parallel(int i_id, int i_n_proc, int i_tam, int i_n, double *pd_val, int *pi_col, int *pi_ptr, double *pd_vet, double *pd_res);
+void mult_mat_vector_parallel(int i_id, int i_n_proc, int i_tam, int *pi_desl, int i_n, double *pd_val, int *pi_col, int *pi_ptr, double *pd_vet, double *pd_res);
 void mult_mat_vector(int i_n, double *pd_val, int *pi_col, int *pi_ptr, double *pd_vet, double *pd_res);
 void mult_mat_row_vector(int i_n, double *pd_val, int *pd_row, int *pd_ptr, double *pd_vet, double *pd_res);
 double mult_vector_row_vector(int i_n, double *pd_vector1, double *pd_vector2);
@@ -127,23 +127,17 @@ double *aloc_vector(int i_size) {
   return calloc(i_size, sizeof(double));
 }
 
-void mult_mat_vector_parallel(int i_id, int i_n_proc, int i_tam, int i_n, double *pd_val, int *pi_col, int *pi_ptr, double *pd_vet, double *pd_res) {
+void mult_mat_vector_parallel(int i_id, int i_n_proc, int i_tam, int *pi_desl, int i_n, double *pd_val, int *pi_col, int *pi_ptr, double *pd_vet, double *pd_res) {
 
   int i_index = 0, i_j = 0, i_index_res = 0;
 
-  for(i_index=i_id, i_index_res=0 ; (i_index<i_n) && (i_index_res<i_tam) ; i_index+=i_n_proc, i_index_res++) {
+  for(i_index=pi_desl[i_id], i_index_res=0 ; /*(i_index<i_tam) && */(i_index_res<i_tam) ; i_index++, i_index_res++) {
 
     pd_res[i_index_res] = 0;
     for(i_j=pi_ptr[i_index] - 1 ; i_j < pi_ptr[i_index + 1] - 1 ; i_j++) {
         pd_res[i_index_res] += pd_val[i_j] * pd_vet[pi_col[i_j] - 1];
     }
-
-    //printf("ID: %d i_index_res= %d\n", i_id, i_index_res);
   }
-
-  // for(int i=0 ; i<i_n/i_n_proc ; i++) {
-  //   pd_res[i] = i_id;
-  // }
 }
 
 void mult_mat_vector(int i_n, double *pd_val, int *pi_col, int *pi_ptr, double *pd_vet, double *pd_res) {
@@ -331,9 +325,9 @@ int main(int argc, char **argv) {
     // for(int i_index=0 ; i_index<i_n_proc ; i_index++) {
 	  //   printf("pi_cont[%d] = %d\n", i_index, pi_cont[i_index]); //Process x will send an array of length y
 	  // }
-    // for(int i_index=0 ; i_index<i_n_proc ; i_index++) {
-		//   printf("pi_desl[%d] = %d\n", i_index, pi_desl[i_index]); //Process x will put the data on the main vector at pos y
-		// }
+    //  for(int i_index=0 ; i_index<i_n_proc ; i_index++) {
+		//    printf("pi_desl[%d] = %d\n", i_index, pi_desl[i_index]); //Process x will put the data on the main vector at pos y
+		//  }
   //}
 
   pd_vector_x = aloc_vector(i_N);
@@ -343,7 +337,7 @@ int main(int argc, char **argv) {
   pd_vector_aux = aloc_vector(i_N);
   pd_vector_aux_part = aloc_vector(i_tam);
   pd_vector_v = aloc_vector(i_N);
-  pd_vector_v_part = aloc_vector((i_N/i_n_proc)+1);
+  pd_vector_v_part = aloc_vector(i_tam);
   pd_vector_r2 = aloc_vector(i_N);
   pd_vector_b = aloc_vector(i_N);
 
@@ -370,7 +364,7 @@ int main(int argc, char **argv) {
   //printf("ID: %d ps_mat_csr->pd_values[0] = %f\n", i_id, ps_mat_csr->pd_values[0]);
   
   //r = b - A*x;
-  mult_mat_vector_parallel(i_id, i_n_proc, i_tam, i_N, ps_mat_csr->pd_values, ps_mat_csr->pi_indexes, ps_mat_csr->pi_pointers, pd_vector_x, pd_vector_aux_part);
+  mult_mat_vector_parallel(i_id, i_n_proc, i_tam, pi_desl, i_N, ps_mat_csr->pd_values, ps_mat_csr->pi_indexes, ps_mat_csr->pi_pointers, pd_vector_x, pd_vector_aux_part);
 
   // for(int i=0 ; i<i_N/i_n_proc ; i++) {
   //   printf("ID: %d pd_vector_aux_part[%d] = %f\n", i_id, i, pd_vector_aux_part[i]);
@@ -406,16 +400,21 @@ int main(int argc, char **argv) {
     //MPI_Bcast(pd_vector_p, i_N, MPI_DOUBLE, kMAIN_PROC, MPI_COMM_WORLD);
 
     //v = A * p;    
-    //mult_mat_vector_parallel(i_id, i_n_proc, i_N, ps_mat_csr->pd_values, ps_mat_csr->pi_indexes, ps_mat_csr->pi_pointers, pd_vector_p, pd_vector_v_part);
-    mult_mat_vector(i_N, ps_mat_csr->pd_values, ps_mat_csr->pi_indexes, ps_mat_csr->pi_pointers, pd_vector_p, pd_vector_v);
+    mult_mat_vector_parallel(i_id, i_n_proc, i_tam, pi_desl, i_N, ps_mat_csr->pd_values, ps_mat_csr->pi_indexes, ps_mat_csr->pi_pointers, pd_vector_p, pd_vector_v_part);
+    //mult_mat_vector(i_N, ps_mat_csr->pd_values, ps_mat_csr->pi_indexes, ps_mat_csr->pi_pointers, pd_vector_p, pd_vector_v);
 
-    //MPI_Allgather(pd_vector_v_part, i_N/i_n_proc, MPI_DOUBLE, pd_vector_v, i_N/i_n_proc, MPI_DOUBLE, MPI_COMM_WORLD);
+    MPI_Allgatherv(pd_vector_v_part, i_tam, MPI_DOUBLE, pd_vector_v, pi_cont, pi_desl, MPI_DOUBLE, MPI_COMM_WORLD); 
 
-    // if(i_id == 0 && i_iteration==1) {
-    //   for(int i=0 ; i<i_N ; i++) {
-    //     printf("ID: %d pd_vector_v[%d] = %f\n", i_id, i, pd_vector_v[i]);
-    //  }
-    // }  
+    //if(i_id == 1 && i_iteration==1) {
+
+      // for(int i=0 ; i<i_tam ; i++) {
+      //   printf("ID: %d pd_vector_v_part[%d] = %f\n", i_id, i, pd_vector_v_part[i]);
+      // }
+
+      // for(int i=0 ; i<i_N ; i++) {
+      //   printf("ID: %d pd_vector_v[%d] = %f\n", i_id, i, pd_vector_v[i]);
+      // }
+    //}
 
     //alpha = rho/(p2'*v)
     d_alpha = d_rho / mult_vector_row_vector(i_N, pd_vector_p2, pd_vector_v);
