@@ -8,6 +8,7 @@
 #define kQTD_ARGS 2
 #define mat(i_row, i_col) pd_mat_a[i_row * kN_COLUMNS + i_col]
 #define kMAIN_PROC 0
+#define kPRINT_VECTOR_SIZE 10
 
 // ---------------------------------------------------------------------------------------------------------------------------------------
 
@@ -214,8 +215,6 @@ void print_vector(int i_n, double *pd_vector) {
 	for(int i_index=0; i_index<i_n; i_index++) {
 		printf("%.4f\n", pd_vector[i_index]);
 	}
-
-	printf("\n");
 }
 
 int main(int argc, char **argv) {
@@ -237,17 +236,20 @@ int main(int argc, char **argv) {
   double d_alpha = 0;
   double d_error = 0.00001;
   double d_calculated_error = 0;
+  double d_ti = 0;
+  double d_tf = 0;
 
   double *pd_vector_x = NULL;
   double *pd_vector_p = NULL;
   double *pd_vector_p2 = NULL;
+  double *pd_vector_p2_part = NULL; //Answer from processes
   double *pd_vector_r = NULL;
   double *pd_vector_aux = NULL;
   double *pd_vector_aux_part = NULL; //Answer from processes
   double *pd_vector_v = NULL;
   double *pd_vector_v_part = NULL; //Answer from processes
   double *pd_vector_r2 = NULL;
-  double *pd_vector_b = NULL;;
+  double *pd_vector_b = NULL;
 
   matrix_hb_t *ps_mat_csc = malloc(sizeof(matrix_hb_t));
   matrix_hb_t *ps_mat_csr = NULL;
@@ -278,6 +280,8 @@ int main(int argc, char **argv) {
   else {
     
   }
+
+  d_ti = MPI_Wtime();
 
   MPI_Bcast(&i_M, 1, MPI_INT, kMAIN_PROC, MPI_COMM_WORLD);
   MPI_Bcast(&i_N, 1, MPI_INT, kMAIN_PROC, MPI_COMM_WORLD);
@@ -333,6 +337,7 @@ int main(int argc, char **argv) {
   pd_vector_x = aloc_vector(i_N);
   pd_vector_p = aloc_vector(i_N);
   pd_vector_p2 = aloc_vector(i_N);
+  pd_vector_p2_part = aloc_vector(i_tam);
   pd_vector_r = aloc_vector(i_N);
   pd_vector_aux = aloc_vector(i_N);
   pd_vector_aux_part = aloc_vector(i_tam);
@@ -344,7 +349,7 @@ int main(int argc, char **argv) {
   if(i_id == kMAIN_PROC) {
     init_vector(pd_vector_b, i_N);
 
-    ps_mat_csr = prepare_matrix(ps_mat_csc, i_non_zeros, i_M);    
+    ps_mat_csr = prepare_matrix(ps_mat_csc, i_non_zeros, i_M); //Transposta   
   }
 
   //Now, just main process has it already allocated
@@ -362,7 +367,7 @@ int main(int argc, char **argv) {
   MPI_Bcast(ps_mat_csr->pd_values, i_non_zeros, MPI_DOUBLE, kMAIN_PROC, MPI_COMM_WORLD);
   MPI_Bcast(pd_vector_b, i_N, MPI_DOUBLE, kMAIN_PROC, MPI_COMM_WORLD);
   //printf("ID: %d ps_mat_csr->pd_values[0] = %f\n", i_id, ps_mat_csr->pd_values[0]);
-  
+
   //r = b - A*x;
   mult_mat_vector_parallel(i_id, i_n_proc, i_tam, pi_desl, i_N, ps_mat_csr->pd_values, ps_mat_csr->pi_indexes, ps_mat_csr->pi_pointers, pd_vector_x, pd_vector_aux_part);
 
@@ -432,7 +437,11 @@ int main(int argc, char **argv) {
 
     //r = r - alpha * v;
     //r2 = r2 - alpha *A' * p2;
-    mult_mat_row_vector(i_N, ps_mat_csc->pd_values, ps_mat_csc->pi_indexes, ps_mat_csc->pi_pointers, pd_vector_p2, pd_vector_aux);
+    //mult_mat_row_vector(i_N, ps_mat_csc->pd_values, ps_mat_csc->pi_indexes, ps_mat_csc->pi_pointers, pd_vector_p2, pd_vector_aux);
+    mult_mat_vector_parallel(i_id, i_n_proc, i_tam, pi_desl, i_N, ps_mat_csc->pd_values, ps_mat_csc->pi_indexes, ps_mat_csc->pi_pointers, pd_vector_p2, pd_vector_p2_part);
+
+    MPI_Allgatherv(pd_vector_p2_part, i_tam, MPI_DOUBLE, pd_vector_aux, pi_cont, pi_desl, MPI_DOUBLE, MPI_COMM_WORLD);
+
     for(int i_index=0 ; i_index<i_N ; i_index++) {
 
       pd_vector_r[i_index] = pd_vector_r[i_index] - d_alpha * pd_vector_v[i_index];
@@ -445,12 +454,14 @@ int main(int argc, char **argv) {
     i_iteration += 1;
   }
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  d_tf = MPI_Wtime();
 
   if(i_id == kMAIN_PROC) {
     printf("Iteracoes = %d\n\n", i_iteration);
+    printf("Tempo: %f\n\n", d_tf-d_ti);
     printf("Resposta:\n");
-    print_vector(i_N, pd_vector_x);
+    print_vector(kPRINT_VECTOR_SIZE, pd_vector_x);
+    printf(".\n.\n.\n");
   }
 
   free(ps_mat_csr->pd_values);
