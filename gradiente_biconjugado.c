@@ -460,7 +460,7 @@ int main(int argc, char **argv) {
     printf("Iteracoes = %d\n\n", i_iteration);
     printf("Tempo: %f\n\n", d_tf-d_ti);
     printf("Resposta:\n");
-    print_vector(kPRINT_VECTOR_SIZE, pd_vector_x);
+    print_vector(((i_N<kPRINT_VECTOR_SIZE) ? i_N : kPRINT_VECTOR_SIZE), pd_vector_x);
     printf(".\n.\n.\n");
   }
 
