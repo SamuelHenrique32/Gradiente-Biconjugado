@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include <iohb.h>
 #include <mpi.h>
 
@@ -63,7 +64,7 @@ void read_matrix(char *pc_file, int *pi_m, int *pi_n, int *pi_non_zeros, int **p
 
   if(i_result == 0) {
 	  printf("Erro ao ler as informacoes da matriz\n");
-		exit(-1);
+		exit(0);
 	}
 
 	printf("Linhas: %d \t Colunas: %d \t Nao Zeros: %d \n\n", *pi_m, *pi_n, *pi_non_zeros);
@@ -76,7 +77,7 @@ void read_matrix(char *pc_file, int *pi_m, int *pi_n, int *pi_non_zeros, int **p
 
 	if(i_result == 0) {
     printf("Erro ao ler os valores da matriz!\n");
-    exit(-1);
+    exit(0);
   }
 }
 
@@ -202,6 +203,7 @@ void print_vector(int i_n, double *pd_vector) {
 int main(int argc, char **argv) {
 
   //All processes has ----------------------------------------------------------------------------
+  bool b_force_finish = false;
   int i_imax = 1000000;
   int i_iteration = 1;
   int i_M = 0, i_N = 0, i_non_zeros = 0;
@@ -249,10 +251,15 @@ int main(int argc, char **argv) {
 
     if(argc != kQTD_ARGS) {
       printf("%s <file>\n", argv[0]);
-      exit(-1);
+      b_force_finish = true;
     }
 
     read_matrix(argv[1], &i_M, &i_N, &i_non_zeros, &ps_mat_csc->pi_pointers, &ps_mat_csc->pi_indexes, &ps_mat_csc->pd_values);
+  }
+
+  if(b_force_finish) {
+    MPI_Finalize();
+    exit(0);
   }
 
   d_ti = MPI_Wtime();
@@ -412,10 +419,14 @@ int main(int argc, char **argv) {
   free(ps_mat_csc->pi_pointers);
   free(ps_mat_csc->pi_indexes);
 
+  free(ps_mat_csc);
+  free(ps_mat_csr);
+
   free(pd_vector_b);
   free(pd_vector_x);
   free(pd_vector_p);
   free(pd_vector_p2);
+  free(pd_vector_p2_part);
   free(pd_vector_r);
   free(pd_vector_aux);
   free(pd_vector_aux_part);
