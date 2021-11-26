@@ -1,3 +1,14 @@
+/**
+ * @file gradiente_biconjugado.c
+ *
+ * @author Samuel Henrique Dalmas (shdalmas@ucs.br)
+ *
+ * @brief Método do Gradiente Biconjugado com matrizes Boeing e paralelização com MPI
+ *
+ * @date 2021-11-26
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -25,8 +36,6 @@ matrix_hb_t* prepare_matrix(matrix_hb_t *ps_matrix, int i_non_zeros, int i_M);
 void init_vector(double *pd_vector, int i_n);
 double *aloc_vector(int i_size);
 void mult_mat_vector_parallel(int i_id, int i_n_proc, int i_tam, int *pi_desl, int i_n, double *pd_val, int *pi_col, int *pi_ptr, double *pd_vet, double *pd_res);
-void mult_mat_vector(int i_n, double *pd_val, int *pi_col, int *pi_ptr, double *pd_vet, double *pd_res);
-void mult_mat_row_vector(int i_n, double *pd_val, int *pd_row, int *pd_ptr, double *pd_vet, double *pd_res);
 double mult_vector_row_vector(int i_n, double *pd_vector1, double *pd_vector2);
 void sub_vector_vector(int i_n, double *pd_vector1, double *pd_vector2, double *pd_result);
 void copy_vector(int i_n, double *pd_vector1, double *pd_result);
@@ -132,40 +141,13 @@ void mult_mat_vector_parallel(int i_id, int i_n_proc, int i_tam, int *pi_desl, i
 
   int i_index = 0, i_j = 0, i_index_res = 0;
 
-  for(i_index=pi_desl[i_id], i_index_res=0 ; /*(i_index<i_tam) && */(i_index_res<i_tam) ; i_index++, i_index_res++) {
+  for(i_index=pi_desl[i_id], i_index_res=0 ; (i_index_res<i_tam) ; i_index++, i_index_res++) {
 
     pd_res[i_index_res] = 0;
     for(i_j=pi_ptr[i_index] - 1 ; i_j < pi_ptr[i_index + 1] - 1 ; i_j++) {
         pd_res[i_index_res] += pd_val[i_j] * pd_vet[pi_col[i_j] - 1];
     }
   }
-}
-
-void mult_mat_vector(int i_n, double *pd_val, int *pi_col, int *pi_ptr, double *pd_vet, double *pd_res) {
-
-  int i_index = 0, i_j = 0;
-
-  for(i_index=0; i_index<i_n ; i_index++) {
-
-    pd_res[i_index] = 0;
-    for(i_j=pi_ptr[i_index] - 1 ; i_j < pi_ptr[i_index + 1] - 1 ; i_j++) {
-        pd_res[i_index] += pd_val[i_j] * pd_vet[pi_col[i_j] - 1];
-    }
-  }  
-}
-
-void mult_mat_row_vector(int i_n, double *pd_val, int *pi_row, int *pi_ptr, double *pd_vet, double *pd_res)
-{
-  int i_index = 0, i_j = 0;
-  
-  for(i_index=0 ; i_index<i_n ; i_index++) {
-
-    pd_res[i_index] = 0;
-    
-    for(i_j=(pi_ptr[i_index]-1) ; i_j<(pi_ptr[i_index+1] - 1) ; i_j++) {
-        pd_res[i_index] += pd_val[i_j] * pd_vet[pi_row[i_j] - 1];
-      }
-    }  
 }
 
 double mult_vector_row_vector(int i_n, double *pd_vector1, double *pd_vector2) {
@@ -256,10 +238,6 @@ int main(int argc, char **argv) {
 
   MPI_Status v_mpi_status = {0};
 
-  //Send variables -------------------------------------------------------------------------------
-
-  //End send variables -------------------------------------------------------------------------------
-
   //End all processes has ----------------------------------------------------------------------------
 
   MPI_Init(&argc, &argv);
@@ -276,10 +254,6 @@ int main(int argc, char **argv) {
 
     read_matrix(argv[1], &i_M, &i_N, &i_non_zeros, &ps_mat_csc->pi_pointers, &ps_mat_csc->pi_indexes, &ps_mat_csc->pd_values);
   }
-  //Another process
-  else {
-    
-  }
 
   d_ti = MPI_Wtime();
 
@@ -289,8 +263,6 @@ int main(int argc, char **argv) {
 
   //Now, just main process has it already allocated
   if(i_id != kMAIN_PROC) {
-    //printf("ID: %d ps_mat_csc->pd_values = %d\n", i_id, ps_mat_csc->pd_values);
-
     ps_mat_csc->pi_pointers = (int*) malloc((i_N+1) * sizeof(int));
     ps_mat_csc->pi_indexes = (int*) malloc(i_non_zeros * sizeof(int));
     ps_mat_csc->pd_values = (double*) malloc(i_non_zeros * sizeof(double)); 
@@ -324,15 +296,6 @@ int main(int argc, char **argv) {
 	else {
 		i_tam = i_N/i_n_proc;
 	}
-  //printf("\nID:%d tam:%d\n", i_id, i_tam);
-  //if(i_id == kMAIN_PROC) {
-    // for(int i_index=0 ; i_index<i_n_proc ; i_index++) {
-	  //   printf("pi_cont[%d] = %d\n", i_index, pi_cont[i_index]); //Process x will send an array of length y
-	  // }
-    //  for(int i_index=0 ; i_index<i_n_proc ; i_index++) {
-		//    printf("pi_desl[%d] = %d\n", i_index, pi_desl[i_index]); //Process x will put the data on the main vector at pos y
-		//  }
-  //}
 
   pd_vector_x = aloc_vector(i_N);
   pd_vector_p = aloc_vector(i_N);
@@ -366,14 +329,9 @@ int main(int argc, char **argv) {
   MPI_Bcast(ps_mat_csr->pi_indexes, i_non_zeros, MPI_INT, kMAIN_PROC, MPI_COMM_WORLD);
   MPI_Bcast(ps_mat_csr->pd_values, i_non_zeros, MPI_DOUBLE, kMAIN_PROC, MPI_COMM_WORLD);
   MPI_Bcast(pd_vector_b, i_N, MPI_DOUBLE, kMAIN_PROC, MPI_COMM_WORLD);
-  //printf("ID: %d ps_mat_csr->pd_values[0] = %f\n", i_id, ps_mat_csr->pd_values[0]);
 
   //r = b - A*x;
   mult_mat_vector_parallel(i_id, i_n_proc, i_tam, pi_desl, i_N, ps_mat_csr->pd_values, ps_mat_csr->pi_indexes, ps_mat_csr->pi_pointers, pd_vector_x, pd_vector_aux_part);
-
-  // for(int i=0 ; i<i_N/i_n_proc ; i++) {
-  //   printf("ID: %d pd_vector_aux_part[%d] = %f\n", i_id, i, pd_vector_aux_part[i]);
-  // }
 
   MPI_Allgatherv(pd_vector_aux_part, i_tam, MPI_DOUBLE, pd_vector_aux, pi_cont, pi_desl, MPI_DOUBLE, MPI_COMM_WORLD); 
 
@@ -402,24 +360,10 @@ int main(int argc, char **argv) {
       pd_vector_p2[i_index] = pd_vector_r2[i_index] + d_beta * pd_vector_p2[i_index];
     }
 
-    //MPI_Bcast(pd_vector_p, i_N, MPI_DOUBLE, kMAIN_PROC, MPI_COMM_WORLD);
-
     //v = A * p;    
     mult_mat_vector_parallel(i_id, i_n_proc, i_tam, pi_desl, i_N, ps_mat_csr->pd_values, ps_mat_csr->pi_indexes, ps_mat_csr->pi_pointers, pd_vector_p, pd_vector_v_part);
-    //mult_mat_vector(i_N, ps_mat_csr->pd_values, ps_mat_csr->pi_indexes, ps_mat_csr->pi_pointers, pd_vector_p, pd_vector_v);
 
     MPI_Allgatherv(pd_vector_v_part, i_tam, MPI_DOUBLE, pd_vector_v, pi_cont, pi_desl, MPI_DOUBLE, MPI_COMM_WORLD); 
-
-    //if(i_id == 1 && i_iteration==1) {
-
-      // for(int i=0 ; i<i_tam ; i++) {
-      //   printf("ID: %d pd_vector_v_part[%d] = %f\n", i_id, i, pd_vector_v_part[i]);
-      // }
-
-      // for(int i=0 ; i<i_N ; i++) {
-      //   printf("ID: %d pd_vector_v[%d] = %f\n", i_id, i, pd_vector_v[i]);
-      // }
-    //}
 
     //alpha = rho/(p2'*v)
     d_alpha = d_rho / mult_vector_row_vector(i_N, pd_vector_p2, pd_vector_v);
@@ -437,7 +381,6 @@ int main(int argc, char **argv) {
 
     //r = r - alpha * v;
     //r2 = r2 - alpha *A' * p2;
-    //mult_mat_row_vector(i_N, ps_mat_csc->pd_values, ps_mat_csc->pi_indexes, ps_mat_csc->pi_pointers, pd_vector_p2, pd_vector_aux);
     mult_mat_vector_parallel(i_id, i_n_proc, i_tam, pi_desl, i_N, ps_mat_csc->pd_values, ps_mat_csc->pi_indexes, ps_mat_csc->pi_pointers, pd_vector_p2, pd_vector_p2_part);
 
     MPI_Allgatherv(pd_vector_p2_part, i_tam, MPI_DOUBLE, pd_vector_aux, pi_cont, pi_desl, MPI_DOUBLE, MPI_COMM_WORLD);
@@ -447,9 +390,6 @@ int main(int argc, char **argv) {
       pd_vector_r[i_index] = pd_vector_r[i_index] - d_alpha * pd_vector_v[i_index];
       pd_vector_r2[i_index] = pd_vector_r2[i_index] - d_alpha * pd_vector_aux[i_index];
     }
-
-    //print_vector_aux(i_n, pd_vector_r);
-    //print_vector_aux(i_n, pd_vector_r2);
 
     i_iteration += 1;
   }
